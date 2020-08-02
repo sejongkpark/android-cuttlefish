@@ -10,7 +10,6 @@ ENV DEBIAN_FRONTEND noninteractive
 # important when we map the (container) user's home directory as a docker volume.
 
 ARG UID
-ARG DO_BUILD_ANDROID
 
 USER root
 WORKDIR /root
@@ -55,7 +54,10 @@ RUN if test $(uname -m) == aarch64; then \
 RUN apt-get install -y xterm
 
 # to run cuttlefish docker in foreground, and test via webrtc/VNC
-RUN apt-get install -y tigervnc-viewer firefox-esr
+RUN apt-get install -y tigervnc-viewer
+RUN apt-get install -y curl wget unzip
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN apt-get install -y ./google-chrome-stable_current_amd64.deb && rm -f ./google-chrome-stable_current_amd64.deb
 
 COPY . android-cuttlefish/
 
@@ -66,16 +68,6 @@ RUN cd /root/android-cuttlefish \
     && rm -rvf ../cuttlefish-common_*.deb \
     && cd .. \
     && rm -rvf android-cuttlefish
-
-RUN apt-get install -y curl wget unzip
-RUN if echo $DO_BUILD_ANDROID | grep "true" > /dev/null 2>&1; then \
-       apt-get install -y libncurses5 libncurses5-dev zip subversion rsync; \
-       mkdir /repo-bin; \
-       curl https://storage.googleapis.com/git-repo-downloads/repo > /repo-bin/repo; \
-       chmod a+x /repo-bin/repo; \
-    fi
-
-ENV PATH=$PATH:/repo-bin
 
 RUN apt-get clean
 

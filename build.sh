@@ -2,8 +2,8 @@
 
 source "shflags"
 
-DEFINE_boolean detect_gpu true "Attempt to detect the GPU vendor on Debian-based Distros in the whitelist"
-DEFINE_boolean build_android_from_src false "Container to also build Android from the source"
+DEFINE_boolean detect_gpu true "Attempt to detect the GPU vendor on a Debian-based docker host"
+DEFINE_boolean force_detect_gpu false "Attempt to detect the GPU vendor regardless of what the docker host is"
 
 FLAGS "$@" || exit 1
 
@@ -24,16 +24,34 @@ function detect_gpu {
   done
 }
 
-OEM=
-if [[ ${FLAGS_detect_gpu} -eq ${FLAGS_TRUE} ]]; then
-  if which dpkg-query > /dev/null 2>&1; then
-    OEM=$(detect_gpu)
+function is_debian_based_distro {
+    # improve to detect Debian based with dpkg in more trustable ways
+    if which dpkg-query > /dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
+is_detect_gpu="false"
+if [[ ${FLAGS_force_detect_gpu} -eq ${FLAGS_TRUE} ]]; then
+    is_detect_gpu="true"
+fi
+
+if [[ $is_detect_gpu == "false" ]] && [[ ${FLAGS_detect_gpu} -eq ${FLAGS_TRUE} ]]; then
+  if is_debian_based_distro; then
+    is_detect_gpu="true"
   else
     echo "### The Cuttlefish Docker with Physical-GPU support is recommended only on Debian/Ubuntu hosts"
     echo "### If this is Debian/Ubuntu, make dpkg-query available for the host"
-    echo "### If not Debian/Ubuntu, consider to add --nodetect_gpu so the Cuttlefish Docker container runs with softgpu"
+    echo "### If not Debian/Ubuntu, consider to add --nodetect_gpu so the Cuttlefish Docker container runs with softgpu, or"
+    echo "###                       give --force_detect_gpu to enforce gpu detection on any other distro"
     exit 1
   fi
+fi
+
+OEM=
+if [[ $is_detect_gpu == "true" ]]; then
+  OEM=$(detect_gpu)
 else
   echo "###"
   echo "### Building without physical-GPU support"
@@ -114,18 +132,13 @@ function build_docker_image {
       docker_targets+=("cuttlefish-hwgpu")
   fi
 
-  local build_android="false"
-  if [[ ${FLAGS_build_android_from_src} -eq ${FLAGS_TRUE} ]]; then
-    build_android="true"
-  fi
   for target in "${docker_targets[@]}"; do
     docker build \
         --target "${target}" \
          -t 'cuttlefish' \
         "${PWD}" \
         --build-arg UID="${UID}" \
-        --build-arg OEM="${OEM}" \
-        --build-arg DO_BUILD_ANDROID="${build_android}"
+        --build-arg OEM="${OEM}"
   done
 
   # don't nuke the cache

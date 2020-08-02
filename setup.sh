@@ -154,6 +154,9 @@ function cvd_docker_create {
     # that there is a valid $ANDROID_HOST_OUT/cvd-host_package.tar.gz
     # and a set of Android images under $ANDROID_PRODUCT_OUT/*.img.
 
+    # this could change to:
+    #  if -v ANDROID_BUILD_TOP, or if --android-dir or -a option is given,
+    #  the host package and img files will be searched accordingly
     if [[ -v ANDROID_BUILD_TOP ]]; then
       local home="$(mktemp -d)"
       echo "Detected Android build environment.  Setting up in ${home}."

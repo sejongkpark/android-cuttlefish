@@ -24,7 +24,9 @@ source setup.sh # once in each terminal window
 ```
 
 To create a container:
-
+(Steve Kim: it would be worthy explaining that we create a docker
+container as a daemon by default, and we have a few options that 
+cvd_docker_create --help will list)
 ```bash
 cvd_docker_create <name> # <name defaults to cuttlefish>
 ```
@@ -43,6 +45,10 @@ cvd_docker_list
 
 There are two ways to provision a container (that is, to install the Cuttlefish
 and Android images on it.)
+(Steve Kim: we would need to modify this part. we have three
+now. Another way of doing this is to assign a host directory, 
+use the AOSP builder docker container to init, sync, and/or build
+cuttlefish device and Android from the source)
 
 If cvd_docker_create detects an [Android build
 environment](https://source.android.com/setup/build/building) that is set up to
